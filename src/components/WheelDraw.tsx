@@ -3,6 +3,7 @@ import { supabase, Profile } from '../lib/supabase';
 import confetti from 'canvas-confetti';
 import { motion, useAnimation } from 'motion/react';
 import { Sparkles, Trophy, Mic2 } from 'lucide-react';
+import NoticeSender from './NoticeSender';
 
 type Participant = Profile & { draw_id: number; is_active: boolean };
 
@@ -277,6 +278,13 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
             ))}
             {participants.length === 0 && (
               <p className="text-slate-500 text-sm text-center py-4">সবাইকে ইতিমধ্যে ড্র করা হয়ে গেছে!</p>
+            )}
+
+            {/* Admin Notice Sender Box (ড্রো ট্যাবের নিচে সব সময় শো করবে) */}
+            {isAdmin && (
+              <div className="mt-8">
+                <NoticeSender isAdmin={isAdmin} />
+              </div>
             )}
           </div>
         </div>
