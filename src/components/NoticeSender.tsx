@@ -23,12 +23,13 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
       if (error) throw error;
 
       if (!profiles || profiles.length === 0) {
-        alert('কোনো মেম্বার পাওয়া যায়নি।');
+        alert('কোনo মেম্বার পাওয়া যায়নি।');
         setSending(false);
         return;
       }
 
-      // সবার কাছে এক এক করে ইমেইল পাঠানো
+      // সবার কাছে এক এক করে ইমেইল পাঠানো এবং ত্রুটি ধরা
+      let successCount = 0;
       for (const member of profiles) {
         if (member.email) {
           const templateParams = {
@@ -37,20 +38,25 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
             message: noticeText,
           };
 
-          await emailjs.send(
-            'service_740w6sm',      // Service ID
-            'template_z8it6hm',     // Template ID[cite: 20]
-            templateParams,
-            'SOirsDBfZZR5Khw4W'     // Public Key[cite: 19]
-          );
+          try {
+            await emailjs.send(
+              'service_740w6sm',      // Service ID
+              'template_z8it6hm',     // Template ID
+              templateParams,
+              'SOirsDBfZZR5Khw4W'     // Public Key
+            );
+            successCount++;
+          } catch (singleErr) {
+            console.error(`Failed to send email to ${member.email}:`, singleErr);
+          }
         }
       }
 
-      alert('সফলভাবে সকল মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে!');
+      alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে!`);
       setNoticeText('');
     } catch (err) {
       console.error('Error sending notice:', err);
-      alert('ইমেইল পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      alert('ইমেইল পাঠাতে সমস্যা হয়েছে। কনসোল চেক করুন।');
     } finally {
       setSending(false);
     }
