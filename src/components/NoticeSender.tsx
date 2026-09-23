@@ -13,24 +13,26 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
       return;
     }
 
-    setSending(true);
+setSending(true);
     try {
-      // Supabase থেকে সব মেম্বারের ইমেইল ও নাম নিয়ে আসা
+      // সরাসরি profiles টেবিল থেকে সব ডেটা নিয়ে আসা
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('email, full_name');
+        .select('*');
 
       if (error) throw error;
 
+      console.log('All Profiles Data:', profiles); // ব্রাউজারের কনসোলে সব প্রোফাইল প্রিন্ট হবে
+
       if (!profiles || profiles.length === 0) {
-        alert('কোনo মেম্বার পাওয়া যায়নি।');
+        alert('কোনো মেম্বার পাওয়া যায়নি।');
         setSending(false);
         return;
       }
 
-      // সবার কাছে এক এক করে ইমেইল পাঠানো এবং ত্রুটি ধরা
       let successCount = 0;
       for (const member of profiles) {
+        // এখানে চেক করা হচ্ছে email ফিল্ড ঠিকমতো পাওয়া যাচ্ছে কি না
         if (member.email) {
           const templateParams = {
             to_name: member.full_name || 'Member',
@@ -47,7 +49,7 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
             );
             successCount++;
           } catch (singleErr) {
-            console.error(`Failed to send email to ${member.email}:`, singleErr);
+            console.error(`Failed to send to ${member.email}:`, singleErr);
           }
         }
       }
