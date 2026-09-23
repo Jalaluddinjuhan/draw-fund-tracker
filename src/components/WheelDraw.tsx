@@ -13,7 +13,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [winner, setWinner] = useState<Participant | null>(null);
 
-
   const wheelControls = useAnimation();
   const rotationRef = useRef(0);
 
@@ -24,7 +23,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
   const fetchParticipants = async () => {
     setLoading(true);
     try {
-      // Get all active draw participants
       const { data: drawData, error: drawError } = await supabase
         .from('draw_participants')
         .select('id, user_id, is_active')
@@ -64,25 +62,13 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     setIsSpinning(true);
     setWinner(null);
 
-    // Calculate winning segment
     const segmentAngle = 360 / participants.length;
-    
-    // Pick a random winner index
     const winnerIndex = Math.floor(Math.random() * participants.length);
     const winningParticipant = participants[winnerIndex];
 
-    // Calculate rotation to land on winner
-    // We want the winner segment to be pointing straight up (0 degrees)
-    // Extra rotations for effect
     const extraSpins = 5 * 360; 
-    
-    // The angle we need to land on (negative because wheel rotates clockwise)
     const targetAngle = -(winnerIndex * segmentAngle) - (segmentAngle / 2);
-    
-    // Add extra spins
     const totalRotation = rotationRef.current + extraSpins + (targetAngle - (rotationRef.current % 360));
-    
-    // Add a random offset within the segment so it doesn't land exactly on the line
     const randomOffset = (Math.random() - 0.5) * segmentAngle * 0.7;
     const finalRotation = totalRotation - randomOffset + 360;
 
@@ -90,10 +76,9 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
 
     await wheelControls.start({
       rotate: finalRotation,
-      transition: { duration: 6, ease: [0.15, 0.85, 0.15, 1] } // Custom easing for slow down
+      transition: { duration: 6, ease: [0.15, 0.85, 0.15, 1] }
     });
 
-    // Spin finished!
     confetti({
       particleCount: 100,
       spread: 70,
@@ -115,7 +100,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     const currentYear = now.getFullYear();
 
     try {
-      // 1. আগে fund_entries আপডেট করুন (এটা ব্যর্থ হলে draw_participants স্পর্শ করা হবে না)
       const { data: existingEntry } = await supabase
         .from('fund_entries')
         .select('id, amount')
@@ -136,7 +120,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
 
       if (fundError) throw fundError;
 
-      // 2. fund_entries সফল হলে তবেই draw_participants থেকে সরান
       const { error: drawError } = await supabase
         .from('draw_participants')
         .update({ is_active: false })
@@ -153,7 +136,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     }
   };
 
-  // Generate wheel slices using SVG
   const renderWheel = () => {
     if (participants.length === 0) {
       return (
@@ -174,7 +156,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
             const startAngle = index * angle;
             const endAngle = (index + 1) * angle;
             
-            // Convert to radians
             const startRad = (startAngle - 90) * (Math.PI / 180);
             const endRad = (endAngle - 90) * (Math.PI / 180);
             
@@ -184,12 +165,9 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
             const y2 = center + radius * Math.sin(endRad);
             
             const largeArcFlag = angle > 180 ? 1 : 0;
-            
-            // Vibrant colors
             const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444', '#06b6d4'];
             const color = colors[index % colors.length];
 
-            // Text positioning
             const textAngle = startAngle + (angle / 2);
             
             return (
@@ -204,18 +182,19 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
                     strokeWidth="0.5"
                   />
                 )}
+                {/* Lomalombi/Vertical Text Styling */}
                 <text
                   x="50"
-                  y="15"
+                  y="28"
                   fill="white"
-                  fontSize="4"
+                  fontSize="3.2"
                   fontWeight="bold"
-                  textAnchor="middle"
+                  textAnchor="end"
                   alignmentBaseline="middle"
                   transform={`rotate(${textAngle}, 50, 50)`}
                   className="drop-shadow-md"
                 >
-                  {p.full_name.length > 12 ? p.full_name.split(' ').slice(0, 2).join(' ') : p.full_name}
+                  {p.full_name.length > 10 ? p.full_name.split(' ')[0] : p.full_name}
                 </text>
               </g>
             );
@@ -233,7 +212,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
         <p className="text-slate-500 mb-8">এই {currentMonthName} মাসের বিজয়ী বেছে নিতে হুইল ঘোরান!</p>
         
         <div className="relative w-80 h-80 md:w-96 md:h-96 mb-8">
-          {/* Pointer/Marker */}
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[24px] border-t-slate-800 drop-shadow-md"></div>
           
           {loading ? (
@@ -262,10 +240,9 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
         )}
       </div>
 
-      {/* Right Column: AI Host & Status */}
+      {/* Right Column: Winner Card & Long Participant List */}
       <div className="flex flex-col gap-6">
 
-        {/* Winner Action Card */}
         {winner && isAdmin && (
            <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200 shadow-sm">
              <div className="flex items-center gap-3 mb-4 text-amber-700">
@@ -284,13 +261,13 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
            </div>
         )}
 
-        {/* Participant List */}
+        {/* Participant List (Height increased to max-h-[500px]) */}
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex-1">
           <h3 className="font-bold text-slate-900 mb-4 flex justify-between items-center">
             Active Pool
             <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-sm">{participants.length} members</span>
           </h3>
-          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
             {participants.map(p => (
               <div key={p.id} className={`p-2 rounded-lg border text-sm flex items-center justify-between ${winner?.id === p.id ? 'border-amber-400 bg-amber-50 text-amber-900 font-bold' : 'border-slate-100 bg-slate-50 text-slate-700'}`}>
                 {p.full_name}
