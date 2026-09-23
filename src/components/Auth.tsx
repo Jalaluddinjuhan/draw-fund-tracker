@@ -33,8 +33,13 @@ export default function Auth() {
             </button>
           </div>
           
-          <div className="mt-6 text-center text-xs text-red-500">
-            Note: This requires a Supabase instance. Make sure you have added VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables.
+          <div className="mt-6 text-left bg-slate-50 p-3 rounded-md text-xs text-slate-600 border border-slate-200">
+            <p className="font-semibold text-slate-700 mb-1">লগইন করার নিয়ম:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>"Sign in with Google" ক্লিক করুন।</li>
+              <li>আপনার গুগল অ্যাকাউন্ট সিলেক্ট করে অনুমতি দিন।</li>
+              <li>লগইন সফল হলে স্বয়ংক্রিয়ভাবে ড্যাশবোর্ডে চলে যাবেন।</li>
+            </ol>
           </div>
         </div>
       </div>
