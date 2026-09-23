@@ -4,6 +4,7 @@ import { Profile } from '../lib/supabase';
 import { LogOut, Home, Users, DollarSign, Settings, Sparkles } from 'lucide-react';
 import FundTracker from './FundTracker';
 import WheelDraw from './WheelDraw';
+import NoticeSender from './NoticeSender';
 
 export default function Dashboard({ session, profile, onSignOut }: { session: Session, profile: Profile, onSignOut: () => void }) {
   const [activeTab, setActiveTab] = useState<'funds' | 'draw'>('funds');
@@ -67,7 +68,12 @@ export default function Dashboard({ session, profile, onSignOut }: { session: Se
           {activeTab === 'funds' ? (
             <FundTracker isAdmin={isAdmin} />
           ) : (
-            <WheelDraw isAdmin={isAdmin} />
+            <>
+              <WheelDraw isAdmin={isAdmin} />
+              {isAdmin && (
+                <NoticeSender isAdmin={isAdmin} />
+              )}
+            </>
           )}
         </div>
       </main>

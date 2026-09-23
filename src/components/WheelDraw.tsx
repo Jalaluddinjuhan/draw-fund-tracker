@@ -268,7 +268,7 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
             Active Pool
             <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-sm">{participants.length} members</span>
           </h3>
-          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
             {participants.map(p => (
               <div key={p.id} className={`p-2 rounded-lg border text-sm flex items-center justify-between ${winner?.id === p.id ? 'border-amber-400 bg-amber-50 text-amber-900 font-bold' : 'border-slate-100 bg-slate-50 text-slate-700'}`}>
                 {p.full_name}
