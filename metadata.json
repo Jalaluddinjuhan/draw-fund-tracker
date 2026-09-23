@@ -1,0 +1,6 @@
+{
+  "name": "Bachelor Fund Draw",
+  "description": "A system to track monthly funds and run an interactive lottery draw hosted by an AI personality.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
