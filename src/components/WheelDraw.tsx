@@ -184,17 +184,18 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
                 )}
                 {/* Lomalombi/Vertical Text Styling */}
                 <text
-                  x="50"
-                  y="28"
+                  x="88"
+                  y="50"
                   fill="white"
-                  fontSize="3.2"
+                  fontSize="4"
                   fontWeight="bold"
                   textAnchor="end"
+                  dominantBaseline="central"
                   alignmentBaseline="middle"
-                  transform={`rotate(${textAngle}, 50, 50)`}
-                  className="drop-shadow-md"
+                  transform={`rotate(${textAngle - 90}, 50, 50)`}
+                  className="drop-shadow-md select-none"
                 >
-                  {p.full_name.length > 10 ? p.full_name.split(' ')[0] : p.full_name}
+                  {p.full_name.length > 12 ? p.full_name.split(' ').slice(0, 2).join(' ') : p.full_name}
                 </text>
               </g>
             );
