@@ -7,9 +7,6 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-// ⚠️ এই ড্র সাইকেলের জন্য ফিক্সড মাসিক অ্যামাউন্ট — নতুন সাইকেল শুরু হলে এখানে বদলে দিন
-const FIXED_MONTHLY_AMOUNT = 5000;
-
 const BN_MONTHS = [
   'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
   'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
@@ -23,6 +20,11 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
   const [drawStatus, setDrawStatus] = useState<Record<string, boolean>>({}); // user_id -> is_active
   const [loading, setLoading] = useState(true);
 
+  // total amount show 
+  const [monthlyAmount, setMonthlyAmount] = useState(5000);
+  const [editingAmount, setEditingAmount] = useState(false);
+  const [amountInput, setAmountInput] = useState('');
+
   useEffect(() => {
     fetchData();
   }, [selectedYear, selectedMonth]);
@@ -30,14 +32,16 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [profilesRes, fundsRes, drawRes] = await Promise.all([
+       const [profilesRes, fundsRes, drawRes, settingsRes] = await Promise.all([
         supabase.from('profiles').select('*').order('full_name'),
         supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('month', selectedMonth),
-        supabase.from('draw_participants').select('user_id, is_active')
+        supabase.from('draw_participants').select('user_id, is_active'),
+        supabase.from('app_settings').select('monthly_amount').eq('id', 1).maybeSingle()
       ]);
 
       if (profilesRes.data) setProfiles(profilesRes.data);
       if (fundsRes.data) setFunds(fundsRes.data);
+      if (settingsRes.data) setMonthlyAmount(settingsRes.data.monthly_amount);
       if (drawRes.data) {
         const map: Record<string, boolean> = {};
         drawRes.data.forEach(d => { map[d.user_id] = d.is_active; });
@@ -55,7 +59,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
 
   // --- সামারি ক্যালকুলেশন ---
   const totalMembers = profiles.length;
-  const totalPool = FIXED_MONTHLY_AMOUNT * totalMembers;
+  const totalPool = monthlyAmount * totalMembers;
   const collectedAmount = funds.reduce((sum, f) => sum + (f.amount || 0), 0);
   const paidCount = funds.filter(f => (f.amount || 0) > 0).length;
   const winnersCount = Object.values(drawStatus).filter(v => v === false).length;
@@ -72,13 +76,32 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
       nextDrawYear += 1;
     }
   }
+
+  const saveMonthlyAmount = async () => {
+    if (!isAdmin) return;
+    const newAmount = parseFloat(amountInput);
+    if (isNaN(newAmount) || newAmount <= 0) return;
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ monthly_amount: newAmount })
+        .eq('id', 1);
+      if (error) throw error;
+      setMonthlyAmount(newAmount);
+      setEditingAmount(false);
+    } catch (error) {
+      console.error('Error updating monthly amount:', error);
+      alert('মাসিক অ্যামাউন্ট আপডেট করা যায়নি।');
+    }
+  };
+  
   const nextDrawMonthName = BN_MONTHS[nextDrawMonth];
 
   const togglePaid = async (userId: string, currentAmount: number) => {
     if (!isAdmin) return;
     try {
       const existing = getFundForUser(userId);
-      const newAmount = currentAmount > 0 ? 0 : FIXED_MONTHLY_AMOUNT;
+      const newAmount = currentAmount > 0 ? 0 : monthlyAmount;
 
       const { error } = await supabase.from('fund_entries').upsert({
         id: existing?.id,
@@ -146,9 +169,36 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
 
       {/* সামারি বার */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200 border-b border-slate-200">
-        <div className="bg-white px-6 py-4">
+ <div className="bg-white px-6 py-4">
           <p className="text-xs text-slate-500 uppercase tracking-wide">মোট পুল</p>
-          <p className="text-lg font-bold text-slate-900">৳{totalPool.toLocaleString()}</p>
+          {editingAmount ? (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="text-sm">৳</span>
+              <input
+                type="number"
+                value={amountInput}
+                onChange={(e) => setAmountInput(e.target.value)}
+                className="w-20 px-1 py-0.5 border rounded text-sm"
+                autoFocus
+              />
+              <button onClick={saveMonthlyAmount} className="text-emerald-600 text-xs font-semibold px-1">✓</button>
+              <button onClick={() => setEditingAmount(false)} className="text-slate-400 text-xs font-semibold px-1">✕</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-bold text-slate-900">৳{totalPool.toLocaleString()}</p>
+              {isAdmin && (
+                <button
+                  onClick={() => { setEditingAmount(true); setAmountInput(monthlyAmount.toString()); }}
+                  className="text-indigo-500 hover:text-indigo-700 text-xs"
+                  title="মাসিক অ্যামাউন্ট বদলান"
+                >
+                  ✏️
+                </button>
+              )}
+            </div>
+          )}
+          <p className="text-[11px] text-slate-400 mt-0.5">প্রতি সদস্য: ৳{monthlyAmount.toLocaleString()}/মাস</p>
         </div>
         <div className="bg-white px-6 py-4">
           <p className="text-xs text-slate-500 uppercase tracking-wide">জমা হয়েছে</p>
