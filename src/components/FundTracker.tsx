@@ -140,13 +140,13 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
   
   const nextDrawMonthName = BN_MONTHS[nextDrawMonth];
 
-  const toggleWinner = async (userId: string, currentWinner: boolean) => {
+const toggleWinner = async (userId: string, currentWinner: boolean) => {
     if (!isAdmin) return;
     try {
       const existing = getFundForUser(userId);
       const newWinnerStatus = !currentWinner;
-      // বিজয়ী হলে অটোমেটিক টোটাল পুলের অ্যামাউন্ট (যেমন ৮০০০০ টাকা) সেট হয়ে যাবে
-      const newAmount = newWinnerStatus ? totalPool : 0;
+      // Winner hole automatic total pool amount (jemon 80000) set hoye jabe, ar uncheck korle 0 hobe
+      const newAmount = newWinnerStatus ? totalPool : (existing?.amount === totalPool ? 0 : (existing?.amount || 0));
 
       const { error } = await supabase.from('fund_entries').upsert({
         id: existing?.id,
@@ -158,6 +158,13 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
       }, { onConflict: 'user_id, year, month' });
 
       if (error) throw error;
+      
+      // Draw participants table-o update kora jacche jate wheel theke status sync thake
+      await supabase.from('draw_participants').upsert({
+        user_id: userId,
+        is_active: !newWinnerStatus // winner hole active false hobe (wheel theke bad porbe)
+      }, { onConflict: 'user_id' });
+
       fetchData();
       fetchLastMonthWinner();
     } catch (error) {
@@ -165,7 +172,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
       alert('Failed to update winner status.');
     }
   };
-
+  
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
