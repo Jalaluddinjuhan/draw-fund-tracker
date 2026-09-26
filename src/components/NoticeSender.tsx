@@ -9,35 +9,36 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
 
   const handleSendNotice = async () => {
     if (!noticeText.trim()) {
-      alert('দয়া করে নোটিশের লেখা লিখুন।');
+      alert('দয়া করে নোটিশের লেখা লিখুন।');
       return;
     }
 
-setSending(true);
+    setSending(true);
     try {
-      // সরাসরি profiles টেবিল থেকে সব ডেটা নিয়ে আসা
       const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*');
 
       if (error) throw error;
 
-      console.log('All Profiles Data:', profiles); // ব্রাউজারের কনসোলে সব প্রোফাইল প্রিন্ট হবে
+      console.log('All Profiles Data:', profiles);
 
       if (!profiles || profiles.length === 0) {
-        alert('কোনো মেম্বার পাওয়া যায়নি।');
+        alert('কোনো মেম্বার পাওয়া যায়নি।');
         setSending(false);
         return;
       }
 
       let successCount = 0;
       for (const member of profiles) {
-        // এখানে চেক করা হচ্ছে email ফিল্ড ঠিকমতো পাওয়া যাচ্ছে কি না
-        if (member.email) {
+        // নিশ্চিত করা হচ্ছে ইমেইল ফিল্ডটি যেন খালি না থাকে
+        if (member.email && member.email.trim() !== '') {
           const templateParams = {
+            to_email: member.email.trim(),
             to_name: member.full_name || 'Member',
-            to_email: member.email,
             message: noticeText,
+            name: member.full_name || 'Member',
+            email: member.email.trim(),
           };
 
           try {
@@ -54,11 +55,11 @@ setSending(true);
         }
       }
 
-      alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে!`);
+      alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে!`);
       setNoticeText('');
     } catch (err) {
       console.error('Error sending notice:', err);
-      alert('ইমেইল পাঠাতে সমস্যা হয়েছে। কনসোল চেক করুন।');
+      alert('ইমেইল পাঠাতে সমস্যা হয়েছে। কনসোল চেক করুন।');
     } finally {
       setSending(false);
     }
