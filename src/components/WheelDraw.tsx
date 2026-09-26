@@ -90,7 +90,7 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     setIsSpinning(false);
   };
 
-  const confirmWinner = async () => {
+const confirmWinner = async () => {
     if (!winner || !isAdmin) return;
 
     const now = new Date();
@@ -100,26 +100,30 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     const currentYear = now.getFullYear();
 
     try {
-      const { data: existingEntry } = await supabase
-        .from('fund_entries')
-        .select('id, amount')
-        .eq('user_id', winner.id)
-        .eq('year', currentYear)
-        .eq('month', currentMonth)
+      // 1. App settings theke monthly_amount ba total pool ber kore ana
+      const { data: settingsRes } = await supabase
+        .from('app_settings')
+        .select('monthly_amount')
+        .eq('id', 1)
         .maybeSingle();
 
+      const monthlyAmount = settingsRes?.monthly_amount || 5000;
+      const totalPool = monthlyAmount * participants.length;
+
+      // 2. fund_entries e winner-er amount-ke totalPool amount-e update ba insert kora
       const { error: fundError } = await supabase
         .from('fund_entries')
         .upsert({
           user_id: winner.id,
           year: currentYear,
           month: currentMonth,
-          amount: existingEntry?.amount ?? 0,
+          amount: totalPool, // Ekhon theke auto total pool (jemon 80000) bosbe
           is_winner: true,
         }, { onConflict: 'user_id, year, month' });
 
       if (fundError) throw fundError;
 
+      // 3. draw_participants e is_active false kora jate wheel theke nam bad pore jay
       const { error: drawError } = await supabase
         .from('draw_participants')
         .update({ is_active: false })
@@ -127,15 +131,15 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
 
       if (drawError) throw drawError;
 
-      alert(`${winner.full_name} কে বিজয়ী হিসেবে ঘোষণা করা হয়েছে এবং পরবর্তী ড্র থেকে বাদ দেওয়া হয়েছে।`);
+      alert(`${winner.full_name} কে বিজয়ী হিসেবে ঘোষণা করা হয়েছে এবং ফান্ড খাতায় ৳${totalPool.toLocaleString()} যোগ করা হয়েছে!`);
       setWinner(null);
       fetchParticipants();
     } catch (error) {
       console.error('Error updating winner:', error);
-      alert('বিজয়ী নিশ্চিত করা যায়নি। সম্ভবত এই মাসের জন্য ইতিমধ্যে একজন বিজয়ী নথিভুক্ত আছে।');
+      alert('বিজয়ী নিশ্চিত করা যায়নি। কনসোল চেক করুন।');
     }
   };
-
+  
   const renderWheel = () => {
     if (participants.length === 0) {
       return (
