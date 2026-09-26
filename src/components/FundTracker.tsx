@@ -169,7 +169,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
 
       {/* সামারি বার */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200 border-b border-slate-200">
- <div className="bg-white px-6 py-4">
+      <div className="bg-white px-6 py-4">
           <p className="text-xs text-slate-500 uppercase tracking-wide">মোট পুল</p>
           {editingAmount ? (
             <div className="flex items-center gap-1 mt-1">
@@ -205,7 +205,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
           <p className="text-lg font-bold text-emerald-600">৳{collectedAmount.toLocaleString()} <span className="text-sm text-slate-400 font-normal">({paidCount}/{totalMembers} জন)</span></p>
         </div> */}
         {/* 2nd Summary Card: Last Month Winner */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white px-6 py-4">
           <div className="text-sm text-slate-500 font-medium">গত মাসের বিজয়ী</div>
           <div className="text-xl font-bold text-slate-800 mt-1">
             {/* Ekhane gata maser winner-er nam ba data dynamically ba manually show korbe */}
