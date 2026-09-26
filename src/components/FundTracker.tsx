@@ -172,7 +172,7 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
       alert('Failed to update winner status.');
     }
   };
-  
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-6 py-5 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -272,7 +272,10 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
               <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-500">No members found.</td></tr>
             ) : (
               profiles.map(profile => {
-                const fund = getFundForUser(profile.id);
+                // Ekhane sothik vabe user_id er sathe milie fund entry khuja hocche
+                const fund = funds.find(f => f.user_id === profile.id);
+                const isPaid = fund && (fund.amount || 0) > 0;
+                const isWinner = fund?.is_winner || hasAlreadyWon(profile.id);
 
                 return (
                   <tr key={profile.id} className="hover:bg-slate-50 transition-colors">
@@ -283,13 +286,30 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {fund?.is_winner || (fund?.amount && fund.amount > 0) ? (
-                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700">
-                          <Check className="w-4 h-4" />
-                          <span className="text-lg">৳</span>{(fund.amount || totalPool).toLocaleString()} পরিশোধিত ({selectedMonth})
-                        </span>
+                      {isAdmin ? (
+                        <button
+                          onClick={() => togglePaid(profile.id, fund?.amount || 0)}
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+                            isPaid
+                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
+                        >
+                          {isPaid ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              <span className="text-lg">৳</span>{(fund?.amount || totalPool).toLocaleString()} পরিশোধিত ({selectedMonth})
+                            </>
+                          ) : (
+                            'বাকি আছে'
+                          )}
+                        </button>
                       ) : (
-                        <span className="text-sm font-semibold text-slate-400">বাকি আছে</span>
+                        <span className={`text-sm font-semibold ${isPaid ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {isPaid ? (
+                            <><span className="text-lg mr-0.5">৳</span>{(fund?.amount || totalPool).toLocaleString()}</>
+                          ) : 'বাকি আছে'}
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
