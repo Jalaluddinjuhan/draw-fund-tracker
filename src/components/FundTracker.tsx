@@ -216,7 +216,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
 
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-100">
+          <thead className="bg-slate-300">
             <tr>
               <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">সদস্যের নাম ও মোবাইল নাম্বার</th>
               <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">পরিশোধিত টাকার পরিমাণ</th>
