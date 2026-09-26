@@ -20,6 +20,9 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
   const [drawStatus, setDrawStatus] = useState<Record<string, boolean>>({}); // user_id -> is_active
   const [loading, setLoading] = useState(true);
 
+  // গত মাসের বিজয়ী স্টেট
+  const [lastMonthWinner, setLastMonthWinner] = useState<{ name: string; monthName: string } | null>(null);
+
   // total amount show 
   const [monthlyAmount, setMonthlyAmount] = useState(5000);
   const [editingAmount, setEditingAmount] = useState(false);
@@ -27,12 +30,13 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
 
   useEffect(() => {
     fetchData();
+    fetchLastMonthWinner();
   }, [selectedYear, selectedMonth]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-       const [profilesRes, fundsRes, drawRes, settingsRes] = await Promise.all([
+      const [profilesRes, fundsRes, drawRes, settingsRes] = await Promise.all([
         supabase.from('profiles').select('*').order('full_name'),
         supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('month', selectedMonth),
         supabase.from('draw_participants').select('user_id, is_active'),
@@ -54,17 +58,56 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
     }
   };
 
+  // গত মাসের বিজয়ী ডাইনামিক বের করার ফাংশন
+  const fetchLastMonthWinner = async () => {
+    try {
+      const currentIndex = MONTHS.indexOf(selectedMonth);
+      let prevMonthIndex = currentIndex - 1;
+      let targetYear = selectedYear;
+
+      if (prevMonthIndex < 0) {
+        prevMonthIndex = 11;
+        targetYear -= 1;
+      }
+
+      const prevMonthName = MONTHS[prevMonthIndex];
+      const prevMonthBnName = BN_MONTHS[prevMonthIndex];
+
+      const { data, error } = await supabase
+        .from('fund_entries')
+        .select('user_id, amount')
+        .eq('year', targetYear)
+        .eq('month', prevMonthName)
+        .eq('is_winner', true)
+        .maybeSingle();
+
+      if (data && data.user_id) {
+        const profile = profiles.find(p => p.id === data.user_id);
+        if (profile) {
+          setLastMonthWinner({ name: profile.full_name, monthName: prevMonthBnName });
+        } else {
+          // যদি profiles স্টেট আগে লোড না হয়ে থাকে, আলাদা ফেচ করে নেব
+          const { data: profData } = await supabase.from('profiles').select('full_name').eq('id', data.user_id).single();
+          setLastMonthWinner({ name: profData?.full_name || 'অজানা', monthName: prevMonthBnName });
+        }
+      } else {
+        setLastMonthWinner({ name: 'কাউকে পাওয়া যায়নি', monthName: prevMonthBnName });
+      }
+    } catch (err) {
+      console.error('Error fetching last month winner:', err);
+      setLastMonthWinner({ name: 'তথ্য নেই', monthName: '' });
+    }
+  };
+
   const getFundForUser = (userId: string) => funds.find(f => f.user_id === userId);
   const hasAlreadyWon = (userId: string) => drawStatus[userId] === false;
 
   // --- সামারি ক্যালকুলেশন ---
   const totalMembers = profiles.length;
   const totalPool = monthlyAmount * totalMembers;
-  const collectedAmount = funds.reduce((sum, f) => sum + (f.amount || 0), 0);
-  const paidCount = funds.filter(f => (f.amount || 0) > 0).length;
   const winnersCount = Object.values(drawStatus).filter(v => v === false).length;
 
-  // --- পরবর্তী ড্র তারিখ ক্যালকুলেশন (আজকের আসল তারিখ অনুযায়ী, ফিল্টারের উপর নির্ভর না) ---
+  // --- পরবর্তী ড্র তারিখ ক্যালকুলেশন ---
   const today = new Date();
   const DRAW_DAY = 11;
   let nextDrawMonth = today.getMonth();
@@ -97,11 +140,13 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
   
   const nextDrawMonthName = BN_MONTHS[nextDrawMonth];
 
-  const togglePaid = async (userId: string, currentAmount: number) => {
+  const toggleWinner = async (userId: string, currentWinner: boolean) => {
     if (!isAdmin) return;
     try {
       const existing = getFundForUser(userId);
-      const newAmount = currentAmount > 0 ? 0 : monthlyAmount;
+      const newWinnerStatus = !currentWinner;
+      // বিজয়ী হলে অটোমেটিক টোটাল পুলের অ্যামাউন্ট (যেমন ৮০০০০ টাকা) সেট হয়ে যাবে
+      const newAmount = newWinnerStatus ? totalPool : 0;
 
       const { error } = await supabase.from('fund_entries').upsert({
         id: existing?.id,
@@ -109,37 +154,15 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
         year: selectedYear,
         month: selectedMonth,
         amount: newAmount,
-        is_winner: existing?.is_winner || false
+        is_winner: newWinnerStatus
       }, { onConflict: 'user_id, year, month' });
 
       if (error) throw error;
       fetchData();
-    } catch (error) {
-      console.error('Error toggling paid status:', error);
-      alert('পেমেন্ট স্ট্যাটাস আপডেট করা যায়নি।');
-    }
-  };
-
-  const toggleWinner = async (userId: string, currentWinner: boolean) => {
-    if (!isAdmin) return;
-    try {
-      const existing = getFundForUser(userId);
-      if (!existing && currentWinner) return;
-
-      const { error } = await supabase.from('fund_entries').upsert({
-        id: existing?.id,
-        user_id: userId,
-        year: selectedYear,
-        month: selectedMonth,
-        amount: existing?.amount || 0,
-        is_winner: !currentWinner
-      }, { onConflict: 'user_id, year, month' });
-
-      if (error) throw error;
-      fetchData();
+      fetchLastMonthWinner();
     } catch (error) {
       console.error('Error toggling winner:', error);
-      alert('Failed to update winner status. Ensure there is only one winner per month.');
+      alert('Failed to update winner status.');
     }
   };
 
@@ -169,7 +192,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
 
       {/* সামারি বার */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200 border-b border-slate-200">
-      <div className="bg-white px-6 py-4">
+        <div className="bg-white px-6 py-4">
           <p className="text-xs text-slate-500 uppercase tracking-wide">মোট পুল</p>
           {editingAmount ? (
             <div className="flex items-center gap-1 mt-1">
@@ -200,18 +223,22 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
           )}
           <p className="text-[11px] text-slate-400 mt-0.5">প্রতি সদস্য: ৳{monthlyAmount.toLocaleString()}/মাস</p>
         </div>
-        {/* <div className="bg-white px-6 py-4">
-          <p className="text-xs text-slate-500 uppercase tracking-wide">জমা হয়েছে</p>
-          <p className="text-lg font-bold text-emerald-600">৳{collectedAmount.toLocaleString()} <span className="text-sm text-slate-400 font-normal">({paidCount}/{totalMembers} জন)</span></p>
-        </div> */}
-        {/* 2nd Summary Card: Last Month Winner */}
+
+        {/* 2nd Summary Card: Dynamic Last Month Winner */}
         <div className="bg-white px-6 py-4">
-          <div className="text-sm text-slate-500 font-medium">গত মাসের বিজয়ী</div>
-          <div className="text-xl font-bold text-slate-800 mt-1">
-            {/* Ekhane gata maser winner-er nam ba data dynamically ba manually show korbe */}
-            Atiqus Samad <span className="text-xs font-normal text-slate-500">(আগস্ট)</span>
+          <div className="text-xs text-slate-500 uppercase tracking-wide">গত মাসের বিজয়ী</div>
+          <div className="text-lg font-bold text-slate-800 mt-1 truncate">
+            {lastMonthWinner ? (
+              <>
+                {lastMonthWinner.name}{' '}
+                <span className="text-xs font-normal text-slate-500">({lastMonthWinner.monthName})</span>
+              </>
+            ) : (
+              'লোড হচ্ছে...'
+            )}
           </div>
         </div>
+
         <div className="bg-white px-6 py-4">
           <p className="text-xs text-slate-500 uppercase tracking-wide">পরবর্তী ড্র</p>
           <p className="text-lg font-bold text-indigo-600">১১ {nextDrawMonthName}, {nextDrawYear}</p>
@@ -228,7 +255,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
             <tr>
               <th scope="col" className="px-6 py-3.5 text-left text-base font-bold text-slate-700 uppercase tracking-wider">সদস্যের নাম ও মোবাইল নাম্বার</th>
               <th scope="col" className="px-6 py-3.5 text-left text-base font-bold text-slate-700 uppercase tracking-wider">পরিশোধিত টাকার পরিমাণ</th>
-              <th scope="col" className="px-6 py-3.5 text-center text-base font-bold text-slate-700 uppercase tracking-wider">বিজয়ী কিনা?</th>
+              <th scope="col" className="px-6 py-3.5 text-center text-base font-bold text-slate-700 uppercase tracking-wider">বিজয়ী কিনা?</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
@@ -249,36 +276,19 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {isAdmin ? (
-                        <button
-                          onClick={() => togglePaid(profile.id, fund?.amount || 0)}
-                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                            fund?.amount
-                              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                          }`}
-                        >
-                          {fund?.amount ? (
-                            <>
-                              <Check className="w-4 h-4" />
-                              <span className="text-lg">৳</span>{fund.amount.toLocaleString()} পরিশোধিত ({selectedMonth})
-                            </>
-                          ) : (
-                            'বাকি আছে'
-                          )}
-                        </button>
-                      ) : (
-                        <span className={`text-sm font-semibold ${fund?.amount ? 'text-emerald-600' : 'text-slate-400'}`}>
-                          {fund?.amount ? (
-                            <><span className="text-lg mr-0.5">৳</span>{fund.amount.toLocaleString()}</>
-                          ) : 'বাকি আছে'}
+                      {fund?.is_winner || (fund?.amount && fund.amount > 0) ? (
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700">
+                          <Check className="w-4 h-4" />
+                          <span className="text-lg">৳</span>{(fund.amount || totalPool).toLocaleString()} পরিশোধিত ({selectedMonth})
                         </span>
+                      ) : (
+                        <span className="text-sm font-semibold text-slate-400">বাকি আছে</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {hasAlreadyWon(profile.id) ? (
+                      {hasAlreadyWon(profile.id) && !fund?.is_winner ? (
                         <span
-                          title={`এই মেম্বার আগের একটি ড্র জিতে ৳${totalPool.toLocaleString()} পেয়েছে`}
+                          title={`এই মেম্বার আগের একটি ড্র জিতেছে`}
                           className="inline-flex items-center justify-center w-6 h-6 rounded border bg-amber-100 border-amber-300 text-amber-600"
                         >
                           <Check className="w-4 h-4" />
@@ -298,7 +308,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
                       ) : (
                         fund?.is_winner && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                            🏆 বিজয়ী — ৳{totalPool.toLocaleString()}
+                            🏆 বিজয়ী — ৳{(fund.amount || totalPool).toLocaleString()}
                           </span>
                         )
                       )}
