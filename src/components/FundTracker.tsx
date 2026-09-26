@@ -253,7 +253,7 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
                           {fund?.amount ? (
                             <>
                               <Check className="w-4 h-4" />
-                              <span className="text-lg">৳</span>{fund.amount.toLocaleString()} পরিশোধিত
+                              <span className="text-lg">৳</span>{fund.amount.toLocaleString()} পরিশোধিত ({selectedMonth})
                             </>
                           ) : (
                             'বাকি আছে'
