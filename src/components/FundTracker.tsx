@@ -216,11 +216,11 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
 
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-300">
+          <thead className="bg-slate-150">
             <tr>
-              <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">সদস্যের নাম ও মোবাইল নাম্বার</th>
-              <th scope="col" className="px-6 py-3.5 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">পরিশোধিত টাকার পরিমাণ</th>
-              <th scope="col" className="px-6 py-3.5 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">বিজয়ী কিনা?</th>
+              <th scope="col" className="px-6 py-3.5 text-left text-base font-bold text-slate-700 uppercase tracking-wider">সদস্যের নাম ও মোবাইল নাম্বার</th>
+              <th scope="col" className="px-6 py-3.5 text-left text-base font-bold text-slate-700 uppercase tracking-wider">পরিশোধিত টাকার পরিমাণ</th>
+              <th scope="col" className="px-6 py-3.5 text-center text-base font-bold text-slate-700 uppercase tracking-wider">বিজয়ী কিনা?</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
