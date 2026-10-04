@@ -15,13 +15,12 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
 
     setSending(true);
     try {
+      // profiles table theke sobar email ebong full_name ana hocche
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('full_name, email');
 
       if (error) throw error;
-
-      console.log('All Profiles Data:', profiles);
 
       if (!profiles || profiles.length === 0) {
         alert('কোনো মেম্বার পাওয়া যায়নি।');
@@ -30,8 +29,10 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
       }
 
       let successCount = 0;
+      let failCount = 0;
+
       for (const member of profiles) {
-        // নিশ্চিত করা হচ্ছে ইমেইল ফিল্ডটি যেন খালি না থাকে
+        // Jodi email field ti thake ebong faka na hoy
         if (member.email && member.email.trim() !== '') {
           const templateParams = {
             to_email: member.email.trim(),
@@ -43,19 +44,20 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
 
           try {
             await emailjs.send(
-              'service_740w6sm',      // Service ID
-              'template_z8it6hm',     // Template ID
+              'service_740w6sm',   // Service ID
+              'template_z8it6hm',    // Template ID
               templateParams,
-              'SOirsDBfZZR5Khw4W'     // Public Key
+              'SOirsDBfZZR5Khw4W'    // Public Key
             );
             successCount++;
           } catch (singleErr) {
             console.error(`Failed to send to ${member.email}:`, singleErr);
+            failCount++;
           }
         }
       }
 
-      alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে!`);
+      alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে! ${failCount > 0 ? `(${failCount} টি ব্যর্থ হয়েছে)` : ''}`);
       setNoticeText('');
     } catch (err) {
       console.error('Error sending notice:', err);
