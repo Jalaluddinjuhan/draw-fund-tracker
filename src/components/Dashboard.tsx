@@ -5,9 +5,10 @@ import { LogOut, Home, Users, DollarSign, Settings, Sparkles } from 'lucide-reac
 import FundTracker from './FundTracker';
 import WheelDraw from './WheelDraw';
 import NoticeSender from './NoticeSender';
+import Constitution from './Constitution';
 
 export default function Dashboard({ session, profile, onSignOut }: { session: Session, profile: Profile, onSignOut: () => void }) {
-  const [activeTab, setActiveTab] = useState<'funds' | 'draw'>('funds');
+  const [activeTab, setActiveTab] = useState<'funds' | 'draw' | 'constitution'>('funds');
   const isAdmin = profile.role === 'admin';
 
   return (
@@ -43,6 +44,17 @@ export default function Dashboard({ session, profile, onSignOut }: { session: Se
                   <Sparkles className="w-4 h-4 mr-2" />
                   Lottery Draw
                 </button>
+                <button
+                  onClick={() => setActiveTab('constitution')}
+                  className={`${
+                    activeTab === 'constitution'
+                      ? 'border-indigo-500 text-slate-900'
+                      : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors`}
+                >
+                  <span className="mr-2 text-base leading-none">📜</span>
+                  Constitution
+                </button>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -64,16 +76,18 @@ export default function Dashboard({ session, profile, onSignOut }: { session: Se
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-4 sm:px-0">
+<div className="px-4 py-4 sm:px-0">
           {activeTab === 'funds' ? (
             <FundTracker isAdmin={isAdmin} />
-          ) : (
+          ) : activeTab === 'draw' ? (
             <>
               <WheelDraw isAdmin={isAdmin} />
               {isAdmin && (
                 <NoticeSender isAdmin={isAdmin} />
               )}
             </>
+          ) : (
+            <Constitution />
           )}
         </div>
       </main>
