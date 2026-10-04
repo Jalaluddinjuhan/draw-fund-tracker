@@ -90,6 +90,56 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     setIsSpinning(false);
   };
 
+// const confirmWinner = async () => {
+//     if (!winner || !isAdmin) return;
+
+//     const now = new Date();
+//     const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+//       'July', 'August', 'September', 'October', 'November', 'December'];
+//     const currentMonth = MONTHS[now.getMonth()];
+//     const currentYear = now.getFullYear();
+
+//     try {
+//       // 1. App settings theke monthly_amount ba total pool ber kore ana
+//       const { data: settingsRes } = await supabase
+//         .from('app_settings')
+//         .select('monthly_amount')
+//         .eq('id', 1)
+//         .maybeSingle();
+
+//       const monthlyAmount = settingsRes?.monthly_amount || 5000;
+//       const totalPool = monthlyAmount * participants.length;
+
+//       // 2. fund_entries e winner-er amount-ke totalPool amount-e update ba insert kora
+//       const { error: fundError } = await supabase
+//         .from('fund_entries')
+//         .upsert({
+//           user_id: winner.id,
+//           year: currentYear,
+//           month: currentMonth,
+//           amount: totalPool, // Ekhon theke auto total pool (jemon 80000) bosbe
+//           is_winner: true,
+//         }, { onConflict: 'user_id, year, month' });
+
+//       if (fundError) throw fundError;
+
+//       // 3. draw_participants e is_active false kora jate wheel theke nam bad pore jay
+//       const { error: drawError } = await supabase
+//         .from('draw_participants')
+//         .update({ is_active: false })
+//         .eq('id', winner.draw_id);
+
+//       if (drawError) throw drawError;
+
+//       alert(`${winner.full_name} কে বিজয়ী হিসেবে ঘোষণা করা হয়েছে এবং ফান্ড খাতায় ৳${totalPool.toLocaleString()} যোগ করা হয়েছে!`);
+//       setWinner(null);
+//       fetchParticipants();
+//     } catch (error) {
+//       console.error('Error updating winner:', error);
+//       alert('বিজয়ী নিশ্চিত করা যায়নি। কনসোল চেক করুন।');
+//     }
+//   };
+
 const confirmWinner = async () => {
     if (!winner || !isAdmin) return;
 
@@ -100,30 +150,31 @@ const confirmWinner = async () => {
     const currentYear = now.getFullYear();
 
     try {
-      // 1. App settings theke monthly_amount ba total pool ber kore ana
-      const { data: settingsRes } = await supabase
-        .from('app_settings')
-        .select('monthly_amount')
-        .eq('id', 1)
-        .maybeSingle();
+      // 1. App settings theke monthly_amount ebong profiles theke total member count ana
+      const [settingsRes, profilesCountRes] = await Promise.all([
+        supabase.from('app_settings').select('monthly_amount').eq('id', 1).maybeSingle(),
+        supabase.from('profiles').select('id', { count: 'exact', head: true })
+      ]);
 
-      const monthlyAmount = settingsRes?.monthly_amount || 5000;
-      const totalPool = monthlyAmount * participants.length;
+      const monthlyAmount = settingsRes.data?.monthly_amount || 5000;
+      // Active participants er poriborte amra total profiles/members (jemon 16) diye pool hishab korbo
+      const totalMembers = profilesCountRes.count || 16; 
+      const totalPool = monthlyAmount * totalMembers; // 5000 * 16 = 80,000
 
-      // 2. fund_entries e winner-er amount-ke totalPool amount-e update ba insert kora
+      // 2. fund_entries e winner-er amount-ke fix kore 80,000 (totalPool) dewa
       const { error: fundError } = await supabase
         .from('fund_entries')
         .upsert({
           user_id: winner.id,
           year: currentYear,
           month: currentMonth,
-          amount: totalPool, // Ekhon theke auto total pool (jemon 80000) bosbe
+          amount: totalPool, // Ekhon sob somoy fix 80,000 ashbe
           is_winner: true,
         }, { onConflict: 'user_id, year, month' });
 
       if (fundError) throw fundError;
 
-      // 3. draw_participants e is_active false kora jate wheel theke nam bad pore jay
+      // 3. draw_participants e is_active false kora
       const { error: drawError } = await supabase
         .from('draw_participants')
         .update({ is_active: false })
@@ -131,7 +182,7 @@ const confirmWinner = async () => {
 
       if (drawError) throw drawError;
 
-      alert(`${winner.full_name} কে বিজয়ী হিসেবে ঘোষণা করা হয়েছে এবং ফান্ড খাতায় ৳${totalPool.toLocaleString()} যোগ করা হয়েছে!`);
+      alert(`${winner.full_name} কে বিজয়ী হিসেবে ঘোষণা করা হয়েছে এবং ফান্ড খাতায় ৳${totalPool.toLocaleString()} যোগ করা হয়েছে!`);
       setWinner(null);
       fetchParticipants();
     } catch (error) {

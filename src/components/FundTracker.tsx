@@ -33,31 +33,6 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
     fetchLastMonthWinner();
   }, [selectedYear, selectedMonth]);
 
-  // const fetchData = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const [profilesRes, fundsRes, drawRes, settingsRes] = await Promise.all([
-  //       supabase.from('profiles').select('*').order('full_name'),
-  //       supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('month', selectedMonth),
-  //       supabase.from('draw_participants').select('user_id, is_active'),
-  //       supabase.from('app_settings').select('monthly_amount').eq('id', 1).maybeSingle()
-  //     ]);
-
-  //     if (profilesRes.data) setProfiles(profilesRes.data);
-  //     if (fundsRes.data) setFunds(fundsRes.data);
-  //     if (settingsRes.data) setMonthlyAmount(settingsRes.data.monthly_amount);
-  //     if (drawRes.data) {
-  //       const map: Record<string, boolean> = {};
-  //       drawRes.data.forEach(d => { map[d.user_id] = d.is_active; });
-  //       setDrawStatus(map);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching data:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const fetchData = async () => {
     setLoading(true);
     try {
