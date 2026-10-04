@@ -44,7 +44,7 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
 
           try {
             await emailjs.send(
-              'service_740w6sm',   // Service ID
+              'service_74ow6sm',   // Service ID
               'template_z8it6hm',    // Template ID
               templateParams,
               'SOirsDBfZZR5Khw4W'    // Public Key
