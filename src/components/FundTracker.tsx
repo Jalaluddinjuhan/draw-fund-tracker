@@ -33,23 +33,64 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
     fetchLastMonthWinner();
   }, [selectedYear, selectedMonth]);
 
+  // const fetchData = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const [profilesRes, fundsRes, drawRes, settingsRes] = await Promise.all([
+  //       supabase.from('profiles').select('*').order('full_name'),
+  //       supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('month', selectedMonth),
+  //       supabase.from('draw_participants').select('user_id, is_active'),
+  //       supabase.from('app_settings').select('monthly_amount').eq('id', 1).maybeSingle()
+  //     ]);
+
+  //     if (profilesRes.data) setProfiles(profilesRes.data);
+  //     if (fundsRes.data) setFunds(fundsRes.data);
+  //     if (settingsRes.data) setMonthlyAmount(settingsRes.data.monthly_amount);
+  //     if (drawRes.data) {
+  //       const map: Record<string, boolean> = {};
+  //       drawRes.data.forEach(d => { map[d.user_id] = d.is_active; });
+  //       setDrawStatus(map);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [profilesRes, fundsRes, drawRes, settingsRes] = await Promise.all([
+      const [profilesRes, fundsRes, allWinnersRes, drawRes, settingsRes] = await Promise.all([
         supabase.from('profiles').select('*').order('full_name'),
         supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('month', selectedMonth),
+        supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('is_winner', true), // Sob maser winner entry gulo ana hocche
         supabase.from('draw_participants').select('user_id, is_active'),
         supabase.from('app_settings').select('monthly_amount').eq('id', 1).maybeSingle()
       ]);
 
       if (profilesRes.data) setProfiles(profilesRes.data);
       if (fundsRes.data) setFunds(fundsRes.data);
+      // Sob maser winner der record store korar jonno state ba local array use korte paren, 
+      // ekhane amra sohoje funds-er sathe merge kore nite pari ba alada state rakhte pari.
       if (settingsRes.data) setMonthlyAmount(settingsRes.data.monthly_amount);
       if (drawRes.data) {
         const map: Record<string, boolean> = {};
         drawRes.data.forEach(d => { map[d.user_id] = d.is_active; });
         setDrawStatus(map);
+      }
+
+      // Sob maser winner gulo funds state-er sathe jure dewa jacche jate sob maser view-ete pawa jay
+      if (allWinnersRes.data) {
+        setFunds(prev => {
+          const combined = [...prev];
+          allWinnersRes.data.forEach((w: FundEntry) => {
+            if (!combined.some(f => f.user_id === w.user_id && f.month === w.month)) {
+              combined.push(w);
+            }
+          });
+          return combined;
+        });
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -265,17 +306,20 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
               <th scope="col" className="px-6 py-3.5 text-center text-base font-bold text-slate-700 uppercase tracking-wider">বিজয়ী কিনা?</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-slate-200">
+<tbody className="bg-white divide-y divide-slate-200">
             {loading ? (
               <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-500">Loading records...</td></tr>
             ) : profiles.length === 0 ? (
               <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-500">No members found.</td></tr>
             ) : (
               profiles.map(profile => {
-                // Ekhane sothik vabe user_id er sathe milie fund entry khuja hocche
-                const fund = funds.find(f => f.user_id === profile.id);
-                const isPaid = fund && (fund.amount || 0) > 0;
-                const isWinner = fund?.is_winner || hasAlreadyWon(profile.id);
+                // Ei maser fund entry ba jekono maser winner record khuja hocche
+                const userFunds = funds.filter(f => f.user_id === profile.id);
+                const currentMonthFund = userFunds.find(f => f.month === selectedMonth);
+                const winnerRecord = userFunds.find(f => f.is_winner === true);
+                
+                const isPaid = currentMonthFund && (currentMonthFund.amount || 0) > 0;
+                const isWinnerAnyMonth = !!winnerRecord || hasAlreadyWon(profile.id);
 
                 return (
                   <tr key={profile.id} className="hover:bg-slate-50 transition-colors">
@@ -288,9 +332,9 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {isAdmin ? (
                         <button
-                          onClick={() => togglePaid(profile.id, fund?.amount || 0)}
+                          onClick={() => togglePaid(profile.id, currentMonthFund?.amount || 0)}
                           className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
-                            isPaid
+                            isPaid || winnerRecord
                               ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
                               : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                           }`}
@@ -298,22 +342,29 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
                           {isPaid ? (
                             <>
                               <Check className="w-4 h-4" />
-                              <span className="text-lg">৳</span>{(fund?.amount || totalPool).toLocaleString()} পরিশোধিত ({selectedMonth})
+                              <span className="text-lg">৳</span>{(currentMonthFund?.amount || totalPool).toLocaleString()} পরিশোধিত ({selectedMonth})
+                            </>
+                          ) : winnerRecord ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              <span className="text-lg">৳</span>{(winnerRecord.amount || totalPool).toLocaleString()} পরিশোধিত ({winnerRecord.month})
                             </>
                           ) : (
                             'বাকি আছে'
                           )}
                         </button>
                       ) : (
-                        <span className={`text-sm font-semibold ${isPaid ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        <span className={`text-sm font-semibold ${isPaid || winnerRecord ? 'text-emerald-600' : 'text-slate-400'}`}>
                           {isPaid ? (
-                            <><span className="text-lg mr-0.5">৳</span>{(fund?.amount || totalPool).toLocaleString()}</>
+                            <><span className="text-lg mr-0.5">৳</span>{(currentMonthFund?.amount || totalPool).toLocaleString()}</>
+                          ) : winnerRecord ? (
+                            <><span className="text-lg mr-0.5">৳</span>{(winnerRecord.amount || totalPool).toLocaleString()} ({winnerRecord.month})</>
                           ) : 'বাকি আছে'}
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {hasAlreadyWon(profile.id) && !fund?.is_winner ? (
+                      {hasAlreadyWon(profile.id) && !currentMonthFund?.is_winner ? (
                         <span
                           title={`এই মেম্বার আগের একটি ড্র জিতেছে`}
                           className="inline-flex items-center justify-center w-6 h-6 rounded border bg-amber-100 border-amber-300 text-amber-600"
@@ -322,9 +373,9 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
                         </span>
                       ) : isAdmin ? (
                         <button
-                          onClick={() => toggleWinner(profile.id, fund?.is_winner || false)}
+                          onClick={() => toggleWinner(profile.id, currentMonthFund?.is_winner || false)}
                           className={`inline-flex items-center justify-center w-6 h-6 rounded border ${
-                            fund?.is_winner
+                            isWinnerAnyMonth
                               ? 'bg-amber-100 border-amber-300 text-amber-600'
                               : 'bg-white border-slate-300 text-transparent hover:border-indigo-300'
                           }`}
@@ -333,9 +384,9 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
                           <Check className="w-4 h-4" />
                         </button>
                       ) : (
-                        fund?.is_winner && (
+                        isWinnerAnyMonth && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                            🏆 বিজয়ী — ৳{(fund.amount || totalPool).toLocaleString()}
+                            🏆 বিজয়ী — ৳{totalPool.toLocaleString()}
                           </span>
                         )
                       )}
