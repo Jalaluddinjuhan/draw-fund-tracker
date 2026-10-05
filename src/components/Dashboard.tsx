@@ -9,7 +9,7 @@ import Constitution from './Constitution';
 import MutualFundTracker from './MutualFundTracker'; // Import kora holo
 
 export default function Dashboard({ session, profile, onSignOut }: { session: Session, profile: Profile, onSignOut: () => void }) {
-  const [activeTab, setActiveTab] = useState<'funds' | 'mutual' | 'draw' | 'constitution'>('funds');
+  const [activeTab, setActiveTab] = useState<'overview' | 'funds' | 'mutual' | 'draw' | 'constitution'>('overview');
   const isAdmin = profile.role === 'admin';
 
   return (
