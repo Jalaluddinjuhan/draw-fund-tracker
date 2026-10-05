@@ -190,12 +190,12 @@ const confirmWinner = async () => {
                 )}
                 {/* Lomalombi/Vertical Text Styling */}
                 <text
-                  x="25"
+                  x="97"
                   y="50"
                   fill="white"
-                  fontSize="3.5"
-                  fontWeight="bold"
-                  textAnchor="start"
+                  fontSize="4"
+                  fontWeight="normal"
+                  textAnchor="end"
                   dominantBaseline="central"
                   alignmentBaseline="middle"
                   transform={`rotate(${textAngle - 90}, 50, 50)`}
