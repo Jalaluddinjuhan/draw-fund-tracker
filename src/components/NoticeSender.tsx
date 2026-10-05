@@ -5,6 +5,7 @@ import { Sparkles, Send } from 'lucide-react';
 
 export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
   const [noticeText, setNoticeText] = useState('');
+  const [targetGroup, setTargetGroup] = useState<'draw' | 'mutual' | 'all'>('draw'); // Target Selection State
   const [sending, setSending] = useState(false);
 
   const handleSendNotice = async () => {
@@ -15,10 +16,14 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
 
     setSending(true);
     try {
-      // profiles table theke sobar email ebong full_name ana hocche
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('full_name, email');
+      // Query builder on target group selection
+      let query = supabase.from('profiles').select('full_name, email, member_type');
+      
+      if (targetGroup !== 'all') {
+        query = query.eq('member_type', targetGroup);
+      }
+
+      const { data: profiles, error } = await query;
 
       if (error) throw error;
 
@@ -32,7 +37,6 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
       let failCount = 0;
 
       for (const member of profiles) {
-        // Jodi email field ti thake ebong faka na hoy
         if (member.email && member.email.trim() !== '') {
           const templateParams = {
             to_email: member.email.trim(),
@@ -45,7 +49,7 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
           try {
             await emailjs.send(
               'service_74ow6sm',   // Service ID
-              'template_z8it6hm',    // Template ID
+              'template_z8it6hm',   // Template ID
               templateParams,
               'SOirsDBfZZR5Khw4W'    // Public Key
             );
@@ -57,7 +61,7 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
         }
       }
 
-      alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে! ${failCount > 0 ? `(${failCount} টি ব্যর্থ হয়েছে)` : ''}`);
+      alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে! ${failCount > 0 ? `(${failCount} টি ব্যর্থ হয়েছে)` : ''}`);
       setNoticeText('');
     } catch (err) {
       console.error('Error sending notice:', err);
@@ -75,6 +79,45 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
         <Sparkles className="w-5 h-5 text-indigo-600" />
         মেম্বারদের জন্য নোটিশ পাঠান (Email)
       </h3>
+
+      {/* Target Group Radio/Select Options */}
+      <div className="mb-4 flex items-center gap-6">
+        <span className="text-sm font-medium text-slate-700">প্রাপক নির্বাচন করুন:</span>
+        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+          <input
+            type="radio"
+            name="targetGroup"
+            value="draw"
+            checked={targetGroup === 'draw'}
+            onChange={() => setTargetGroup('draw')}
+            className="text-indigo-600 focus:ring-indigo-500"
+          />
+          Draw Members
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+          <input
+            type="radio"
+            name="targetGroup"
+            value="mutual"
+            checked={targetGroup === 'mutual'}
+            onChange={() => setTargetGroup('mutual')}
+            className="text-indigo-600 focus:ring-indigo-500"
+          />
+          Mutual Fund Members
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+          <input
+            type="radio"
+            name="targetGroup"
+            value="all"
+            checked={targetGroup === 'all'}
+            onChange={() => setTargetGroup('all')}
+            className="text-indigo-600 focus:ring-indigo-500"
+          />
+          Everyone (সবাইকে)
+        </label>
+      </div>
+
       <textarea
         value={noticeText}
         onChange={(e) => setNoticeText(e.target.value)}
@@ -88,8 +131,104 @@ export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
         className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
       >
         <Send className="w-4 h-4" />
-        {sending ? 'পাঠানো হচ্ছে...' : 'সবাইকে ইমেইল পাঠান'}
+        {sending ? 'পাঠানো হচ্ছে...' : 'ইমেইল পাঠান'}
       </button>
     </div>
   );
 }
+
+// import emailjs from '@emailjs/browser';
+// import { useState } from 'react';
+// import { supabase } from '../lib/supabase';
+// import { Sparkles, Send } from 'lucide-react';
+
+// export default function NoticeSender({ isAdmin }: { isAdmin: boolean }) {
+//   const [noticeText, setNoticeText] = useState('');
+//   const [sending, setSending] = useState(false);
+
+//   const handleSendNotice = async () => {
+//     if (!noticeText.trim()) {
+//       alert('দয়া করে নোটিশের লেখা লিখুন।');
+//       return;
+//     }
+
+//     setSending(true);
+//     try {
+//       // profiles table theke sobar email ebong full_name ana hocche
+//       const { data: profiles, error } = await supabase
+//         .from('profiles')
+//         .select('full_name, email');
+
+//       if (error) throw error;
+
+//       if (!profiles || profiles.length === 0) {
+//         alert('কোনো মেম্বার পাওয়া যায়নি।');
+//         setSending(false);
+//         return;
+//       }
+
+//       let successCount = 0;
+//       let failCount = 0;
+
+//       for (const member of profiles) {
+//         // Jodi email field ti thake ebong faka na hoy
+//         if (member.email && member.email.trim() !== '') {
+//           const templateParams = {
+//             to_email: member.email.trim(),
+//             to_name: member.full_name || 'Member',
+//             message: noticeText,
+//             name: member.full_name || 'Member',
+//             email: member.email.trim(),
+//           };
+
+//           try {
+//             await emailjs.send(
+//               'service_74ow6sm',   // Service ID
+//               'template_z8it6hm',    // Template ID
+//               templateParams,
+//               'SOirsDBfZZR5Khw4W'    // Public Key
+//             );
+//             successCount++;
+//           } catch (singleErr) {
+//             console.error(`Failed to send to ${member.email}:`, singleErr);
+//             failCount++;
+//           }
+//         }
+//       }
+
+//       alert(`সফলভাবে ${successCount} জন মেম্বারের কাছে নোটিশ ইমেইল পাঠানো হয়েছে! ${failCount > 0 ? `(${failCount} টি ব্যর্থ হয়েছে)` : ''}`);
+//       setNoticeText('');
+//     } catch (err) {
+//       console.error('Error sending notice:', err);
+//       alert('ইমেইল পাঠাতে সমস্যা হয়েছে। কনসোল চেক করুন।');
+//     } finally {
+//       setSending(false);
+//     }
+//   };
+
+//   if (!isAdmin) return null;
+
+//   return (
+//     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mt-6">
+//       <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+//         <Sparkles className="w-5 h-5 text-indigo-600" />
+//         মেম্বারদের জন্য নোটিশ পাঠান (Email)
+//       </h3>
+//       <textarea
+//         value={noticeText}
+//         onChange={(e) => setNoticeText(e.target.value)}
+//         placeholder="এখানে আপনার নোটিশ লিখুন..."
+//         className="w-full p-3 border border-slate-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-slate-700"
+//         rows={4}
+//       />
+//       <button
+//         onClick={handleSendNotice}
+//         disabled={sending}
+//         className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+//       >
+//         <Send className="w-4 h-4" />
+//         {sending ? 'পাঠানো হচ্ছে...' : 'সবাইকে ইমেইল পাঠান'}
+//       </button>
+//     </div>
+//   );
+// }

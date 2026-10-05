@@ -37,7 +37,8 @@ export default function FundTracker({ isAdmin }: { isAdmin: boolean }) {
     setLoading(true);
     try {
       const [profilesRes, fundsRes, allWinnersRes, drawRes, settingsRes] = await Promise.all([
-        supabase.from('profiles').select('*').order('full_name'),
+        //supabase.from('profiles').select('*').order('full_name'),
+        supabase.from('profiles').select('*').eq('member_type', 'draw').order('full_name'), //draw member filter
         supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('month', selectedMonth),
         supabase.from('fund_entries').select('*').eq('year', selectedYear).eq('is_winner', true), // Sob maser winner entry gulo ana hocche
         supabase.from('draw_participants').select('user_id, is_active'),

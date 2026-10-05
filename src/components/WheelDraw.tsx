@@ -35,7 +35,8 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .in('id', userIds);
+          .in('id', userIds)
+          .eq('member_type', 'draw'); //draw member filter
 
         if (profileError) throw profileError;
 
