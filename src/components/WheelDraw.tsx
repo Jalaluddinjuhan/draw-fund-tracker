@@ -190,7 +190,7 @@ const confirmWinner = async () => {
                 )}
                 {/* Lomalombi/Vertical Text Styling */}
                 <text
-                  x="35"
+                  x="25"
                   y="50"
                   fill="white"
                   fontSize="3.5"
@@ -208,8 +208,8 @@ const confirmWinner = async () => {
           })}
         </motion.g>
         {/* Center white circle to keep the middle clean and empty */}
-        <circle cx="50" cy="50" r="4" fill="white" stroke="#e2e8f0" strokeWidth="1" />
-        <circle cx="50" cy="50" r="2" fill="#4f46e5" />
+        {/* <circle cx="50" cy="50" r="4" fill="white" stroke="#e2e8f0" strokeWidth="1" />
+        <circle cx="50" cy="50" r="2" fill="#4f46e5" /> */}
       </svg>
     );
   };
