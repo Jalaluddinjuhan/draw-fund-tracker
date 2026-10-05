@@ -249,7 +249,7 @@ const confirmWinner = async () => {
                   dominantBaseline="central"
                   alignmentBaseline="middle"
                   transform={`rotate(${textAngle - 90}, 50, 50)`}
-                  className="drop-shadow-md select-none"
+                  className="drop-shadow-md select-none uppercase"
                 >
                   {p.full_name.length > 12 ? p.full_name.split(' ').slice(0, 2).join(' ') : p.full_name}
                 </text>
@@ -306,7 +306,7 @@ const confirmWinner = async () => {
                <Trophy className="w-6 h-6" />
                <h3 className="text-lg font-bold">আমরা একজন বিজয়ী পেয়েছি!</h3>
              </div>
-             <p className="text-slate-700 mb-6 font-medium">
+             <p className="text-slate-700 mb-6 font-medium uppercase">
                {winner.full_name} এই রাউন্ডে জিতেছে। আপনি কি এই বিজয়ীকে নিশ্চিত করে পরবর্তী ড্র থেকে বাদ দিতে চান?
              </p>
              <button 
@@ -326,7 +326,7 @@ const confirmWinner = async () => {
           </h3>
           <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
             {participants.map(p => (
-              <div key={p.id} className={`p-2 rounded-lg border text-sm flex items-center justify-between ${winner?.id === p.id ? 'border-amber-400 bg-amber-50 text-amber-900 font-bold' : 'border-slate-100 bg-slate-50 text-slate-700'}`}>
+              <div key={p.id} className={`p-2 rounded-lg border text-sm flex items-center justify-between uppercase ${winner?.id === p.id ? 'border-amber-400 bg-amber-50 text-amber-900 font-bold' : 'border-slate-100 bg-slate-50 text-slate-700'}`}>
                 {p.full_name}
                 {winner?.id === p.id && <Trophy className="w-4 h-4 text-amber-500" />}
               </div>

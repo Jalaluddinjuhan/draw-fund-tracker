@@ -301,7 +301,7 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
                   <tr key={profile.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-slate-900">নামঃ {profile.full_name}</span>
+                        <span className="text-sm font-medium text-slate-900 uppercase">নামঃ {profile.full_name}</span>
                         <span className="text-sm text-slate-500">মোবাইল নাম্বারঃ {profile.phone_number}</span>
                       </div>
                     </td>

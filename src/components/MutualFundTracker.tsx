@@ -54,7 +54,7 @@ export default function MutualFundTracker({ isAdmin }: { isAdmin: boolean }) {
             ) : (
               mutualMembers.map(member => (
                 <tr key={member.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{member.full_name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 uppercase">{member.full_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{member.phone_number || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{member.email || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{member.address || 'N/A'}</td>
