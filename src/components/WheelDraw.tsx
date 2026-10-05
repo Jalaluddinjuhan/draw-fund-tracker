@@ -91,56 +91,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     setIsSpinning(false);
   };
 
-// const confirmWinner = async () => {
-//     if (!winner || !isAdmin) return;
-
-//     const now = new Date();
-//     const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
-//       'July', 'August', 'September', 'October', 'November', 'December'];
-//     const currentMonth = MONTHS[now.getMonth()];
-//     const currentYear = now.getFullYear();
-
-//     try {
-//       // 1. App settings theke monthly_amount ba total pool ber kore ana
-//       const { data: settingsRes } = await supabase
-//         .from('app_settings')
-//         .select('monthly_amount')
-//         .eq('id', 1)
-//         .maybeSingle();
-
-//       const monthlyAmount = settingsRes?.monthly_amount || 5000;
-//       const totalPool = monthlyAmount * participants.length;
-
-//       // 2. fund_entries e winner-er amount-ke totalPool amount-e update ba insert kora
-//       const { error: fundError } = await supabase
-//         .from('fund_entries')
-//         .upsert({
-//           user_id: winner.id,
-//           year: currentYear,
-//           month: currentMonth,
-//           amount: totalPool, // Ekhon theke auto total pool (jemon 80000) bosbe
-//           is_winner: true,
-//         }, { onConflict: 'user_id, year, month' });
-
-//       if (fundError) throw fundError;
-
-//       // 3. draw_participants e is_active false kora jate wheel theke nam bad pore jay
-//       const { error: drawError } = await supabase
-//         .from('draw_participants')
-//         .update({ is_active: false })
-//         .eq('id', winner.draw_id);
-
-//       if (drawError) throw drawError;
-
-//       alert(`${winner.full_name} কে বিজয়ী হিসেবে ঘোষণা করা হয়েছে এবং ফান্ড খাতায় ৳${totalPool.toLocaleString()} যোগ করা হয়েছে!`);
-//       setWinner(null);
-//       fetchParticipants();
-//     } catch (error) {
-//       console.error('Error updating winner:', error);
-//       alert('বিজয়ী নিশ্চিত করা যায়নি। কনসোল চেক করুন।');
-//     }
-//   };
-
 const confirmWinner = async () => {
     if (!winner || !isAdmin) return;
 
@@ -240,7 +190,7 @@ const confirmWinner = async () => {
                 )}
                 {/* Lomalombi/Vertical Text Styling */}
                 <text
-                  x="88"
+                  x="93"
                   y="50"
                   fill="white"
                   fontSize="4"
@@ -257,6 +207,9 @@ const confirmWinner = async () => {
             );
           })}
         </motion.g>
+        {/* Center white circle to keep the middle clean and empty */}
+        <circle cx="50" cy="50" r="6" fill="white" stroke="#e2e8f0" strokeWidth="1" />
+        <circle cx="50" cy="50" r="2" fill="#4f46e5" />
       </svg>
     );
   };
