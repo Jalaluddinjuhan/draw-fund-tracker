@@ -190,7 +190,7 @@ const confirmWinner = async () => {
                 )}
                 {/* Lomalombi/Vertical Text Styling */}
                 <text
-                  x="100"
+                  x="97"
                   y="50"
                   fill="white"
                   fontSize="4"
