@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase, Profile } from '../lib/supabase';
 import confetti from 'canvas-confetti';
 import { motion, useAnimation } from 'motion/react';
-import { Sparkles, Trophy, Mic2 } from 'lucide-react';
+import { Sparkles, Trophy } from 'lucide-react';
 
 type Participant = Profile & { draw_id: number; is_active: boolean };
 
@@ -15,18 +15,22 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
 
   const wheelControls = useAnimation();
   const rotationRef = useRef(0);
+  const participantsRef = useRef<Participant[]>([]);
+
+  // Keep ref updated with latest participants for realtime callback
+  useEffect(() => {
+    participantsRef.current = participants;
+  }, [participants]);
 
   useEffect(() => {
     fetchParticipants();
 
-    // Supabase Realtime Broadcast Channel Setup for Live Wheel Spinning
     const channel = supabase.channel('wheel_room', {
       config: { broadcast: { self: false } },
     });
 
     channel
       .on('broadcast', { event: 'start_spin' }, async ({ payload }) => {
-        // মেম্বারদের ব্রাউজারেও অ্যানিমেশন রান করানো হবে
         setIsSpinning(true);
         setWinner(null);
 
@@ -42,7 +46,7 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
           colors: ['#4f46e5', '#818cf8', '#fbbf24', '#f59e0b']
         });
 
-        const winningParticipant = participants.find(p => p.id === payload.winnerId);
+        const winningParticipant = participantsRef.current.find(p => p.id === payload.winnerId);
         if (winningParticipant) {
           setWinner(winningParticipant);
         }
@@ -53,7 +57,7 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [participants]);
+  }, []);
 
   const fetchParticipants = async () => {
     setLoading(true);
@@ -110,7 +114,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
 
     rotationRef.current = finalRotation;
 
-    // Supabase Broadcast-এর মাধ্যমে অন্য মেম্বারদের কাছে সিগন্যাল পাঠানো
     await supabase.channel('wheel_room').send({
       type: 'broadcast',
       event: 'start_spin',
@@ -253,7 +256,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Left Column: Wheel */}
       <div className="lg:col-span-2 flex flex-col items-center bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">Bachelor Draw</h2>
         <p className="text-slate-500 mb-8">এই {currentMonthName} মাসের বিজয়ী বেছে নিতে হুইল ঘোরান!</p>
@@ -287,9 +289,7 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
         )}
       </div>
 
-      {/* Right Column: Winner Card & Long Participant List */}
       <div className="flex flex-col gap-6">
-
         {winner && isAdmin && (
            <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200 shadow-sm">
              <div className="flex items-center gap-3 mb-4 text-amber-700">
@@ -308,7 +308,6 @@ export default function WheelDraw({ isAdmin }: { isAdmin: boolean }) {
            </div>
         )}
 
-        {/* Participant List */}
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex-1">
           <h3 className="font-bold text-slate-900 mb-4 flex justify-between items-center">
             Active Pool
