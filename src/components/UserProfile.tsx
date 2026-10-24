@@ -95,7 +95,7 @@ export default function UserProfile({ profile, onUpdate }: { profile: Profile; o
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-500 cursor-not-allowed uppercase"
             />
           </div>
-          <p className="text-xs text-slate-400 mt-1">মেম্বার টাইপ পরিবর্তন করতে অ্যাডമിന്റെ সহায়তা নিন।</p>
+          <p className="text-xs text-slate-400 mt-1">মেম্বার টাইপ পরিবর্তন করতে অ্যাডমিনের সহায়তা নিন।</p>
         </div>
 
         <button
