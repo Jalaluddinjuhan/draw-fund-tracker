@@ -278,7 +278,7 @@ const toggleWinner = async (userId: string, currentWinner: boolean) => {
           <thead className="bg-slate-150">
             <tr>
               <th scope="col" className="px-6 py-3.5 text-left text-base font-bold text-slate-700 uppercase tracking-wider">নাম ও মোবাইল নাম্বার</th>
-              <th scope="col" className="px-6 py-3.5 text-left text-base font-bold text-slate-700 uppercase tracking-wider">পরিশোধিত টাকার পরিমাণ</th>
+              <th scope="col" className="px-6 py-3.5 text-left text-base font-bold text-slate-700 uppercase tracking-wider">ফান্ড পরিশোধের অবস্থা</th>
               <th scope="col" className="px-6 py-3.5 text-center text-base font-bold text-slate-700 uppercase tracking-wider">বিজয়ী কিনা?</th>
             </tr>
           </thead>
